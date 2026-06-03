@@ -1,0 +1,127 @@
+{
+  "report_date": "2026/5/18",
+  "period": {
+    "start": "2026/5/11",
+    "end": "2026/5/17"
+  },
+  "this_week_period": {
+    "start": "2026/5/18",
+    "end": "2026/5/24"
+  },
+  "last_report_date": "2026/5/11",
+  "counts": {
+    "started": 3,
+    "completed": 3,
+    "scheduled": 0
+  },
+  "last_week_breakdown": {
+    "total": 6,
+    "done": 3,
+    "waiting": 1,
+    "customer_reason": 0,
+    "sup_reason": 0,
+    "missed_update": 2,
+    "incomplete_details": [
+      {
+        "cd": "PJ001600",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]アイ・エイチ・ジェイ株式会社_PH2-要件定義",
+        "sales": "堂尾 建人",
+        "pm": "䑓 慎太郎",
+        "start_date": "2026/4/1",
+        "delivery_date": "2026/5/15",
+        "completion_date": "",
+        "category": "missed"
+      },
+      {
+        "cd": "PJ001622",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]東京新橋法律事務所_2026年4月追加開発",
+        "sales": "大畑 康弘",
+        "pm": "前田 康行",
+        "start_date": "2026/4/13",
+        "delivery_date": "2026/5/15",
+        "completion_date": "",
+        "category": "missed"
+      },
+      {
+        "cd": "PJ001637",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]VMアップグレード_株式会社ケンコーホールディングス_kenko",
+        "sales": "加茂 美寿々",
+        "pm": "川原 翼",
+        "start_date": "2026/4/27",
+        "delivery_date": "2026/5/12",
+        "completion_date": "",
+        "category": "waiting"
+      }
+    ]
+  },
+  "details": {
+    "started": [
+      {
+        "cd": "PJ001659",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "株式会社ジャパンタイムズ様　請求知財管理システム　第２フェーズ機能拡張",
+        "sales": "伍十川 知佳",
+        "pm": "清井 建行",
+        "start_date": "2026/5/12",
+        "delivery_date": "2026/6/30",
+        "completion_date": ""
+      },
+      {
+        "cd": "PJ001661",
+        "client": "株式会社ソニック",
+        "name": "[受託]トップページ、予約導線改修",
+        "sales": "川畑 雄太",
+        "pm": "武藤 梨沙",
+        "start_date": "2026/5/12",
+        "delivery_date": "2026/5/29",
+        "completion_date": ""
+      },
+      {
+        "cd": "PJ001662",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "東京エアポートレストラン株式会社［弁当予約受付・レストラン予約ファイル改修］",
+        "sales": "伍十川 知佳",
+        "pm": "秋葉 吉博",
+        "start_date": "2026/5/15",
+        "delivery_date": "2026/6/30",
+        "completion_date": ""
+      }
+    ],
+    "completed": [
+      {
+        "cd": "PJ001633",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託] 株式会社ミナックル_M&A管理システム 機能改善",
+        "sales": "吉田 幸太郎",
+        "pm": "弓田 秀和",
+        "start_date": "2026/4/24",
+        "delivery_date": "2026/5/14",
+        "completion_date": ""
+      },
+      {
+        "cd": "PJ001634",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託] 株式会社ミナックル_M&A管理システム CSV出力",
+        "sales": "吉田 幸太郎",
+        "pm": "弓田 秀和",
+        "start_date": "2026/4/24",
+        "delivery_date": "2026/5/14",
+        "completion_date": ""
+      },
+      {
+        "cd": "PJ001651",
+        "client": "西日本海運株式会社",
+        "name": "[受託]VM新規構築_西日本海運株式会社_nishi-kai",
+        "sales": "加茂 美寿々",
+        "pm": "川原 翼",
+        "start_date": "2026/4/27",
+        "delivery_date": "2026/5/11",
+        "completion_date": ""
+      }
+    ],
+    "scheduled": []
+  }
+}

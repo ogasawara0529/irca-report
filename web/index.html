@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>週次プロジェクト報告</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- トップバー -->
+  <div class="topbar">
+    <div class="topbar__brand">
+      <svg class="topbar__icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 2.5A1.5 1.5 0 014.5 1h6.5l4 4v10.5A1.5 1.5 0 0113.5 17h-9A1.5 1.5 0 013 15.5V2.5z" stroke="#60a5fa" stroke-width="1.4" fill="none"/>
+        <path d="M11 1v4.5h4" stroke="#60a5fa" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        <line x1="6" y1="8.5"  x2="12" y2="8.5"  stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="6" y1="11"   x2="12" y2="11"   stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="6" y1="13.5" x2="9.5" y2="13.5" stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="topbar__name">iRCA Project</span>
+    </div>
+    <div class="topbar__center">週次プロジェクト報告</div>
+    <div class="topbar__right">
+      <span class="topbar__dot"></span>
+      <span id="report-meta">読み込み中...</span>
+    </div>
+  </div>
+
+  <!-- アプリ本体 -->
+  <div class="app-body">
+
+    <!-- 左サイドバー（履歴） -->
+    <aside class="sidebar">
+      <div class="sidebar__header">
+        <span>報告履歴</span>
+        <button class="sidebar__new-btn" onclick="openRegisterModal()" title="新規データ登録">＋ 新規</button>
+      </div>
+      <ul class="sidebar__list" id="date-list">
+        <li class="sidebar__loading">読み込み中...</li>
+      </ul>
+    </aside>
+
+    <!-- 新規登録モーダル -->
+    <div class="modal-overlay" id="register-modal" hidden>
+      <div class="modal">
+        <div class="modal__head">
+          <h2 class="modal__title">新規データ登録</h2>
+          <button class="modal__close" onclick="closeRegisterModal()">✕</button>
+        </div>
+        <div class="modal__body">
+
+          <div class="form-group">
+            <label class="form-label">報告日</label>
+            <input type="date" class="form-input" id="f-report-date">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <span class="form-badge form-badge--blue">01</span>
+              開発・対応開始 期間
+            </label>
+            <div class="date-range">
+              <input type="date" class="form-input" id="f-period1-start">
+              <span class="date-range__sep">〜</span>
+              <input type="date" class="form-input" id="f-period1-end">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <span class="form-badge form-badge--teal">02</span>
+              検収完了・対応完了 期間
+            </label>
+            <div class="date-range">
+              <input type="date" class="form-input" id="f-period2-start">
+              <span class="date-range__sep">〜</span>
+              <input type="date" class="form-input" id="f-period2-end">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <span class="form-badge form-badge--orange">03</span>
+              今週の検収完了予定 期間
+            </label>
+            <div class="date-range">
+              <input type="date" class="form-input" id="f-period3-start">
+              <span class="date-range__sep">〜</span>
+              <input type="date" class="form-input" id="f-period3-end">
+            </div>
+          </div>
+
+          <p class="form-note" id="register-error" hidden></p>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-cancel" onclick="closeRegisterModal()">キャンセル</button>
+          <button class="btn-register" id="btn-register" onclick="submitRegister()">登録</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+
+      <!-- KPI カード -->
+      <section class="kpi-row">
+
+        <div class="kpi kpi--blue" onclick="showDetail('started')" title="クリックで案件一覧">
+          <div class="kpi__header">
+            <span class="kpi__label">開発・対応開始</span>
+            <span class="kpi__badge">01</span>
+          </div>
+          <div class="kpi__period-wrap"><span class="kpi__period" id="note-prev"></span></div>
+          <div class="kpi__body">
+            <div class="kpi__right">
+              <span class="kpi__num" id="num-started">–</span>
+              <span class="kpi__unit">件</span>
+            </div>
+          </div>
+          <div class="kpi__foot"><span class="kpi__hint">一覧を見る ›</span></div>
+        </div>
+
+        <div class="kpi kpi--teal" onclick="showDetail('completed')" title="クリックで案件一覧">
+          <div class="kpi__header">
+            <span class="kpi__label">検収完了・対応完了</span>
+            <span class="kpi__badge">02</span>
+          </div>
+          <div class="kpi__period-wrap"><span class="kpi__period" id="note-prev2"></span></div>
+          <div class="kpi__body">
+            <div class="kpi__right">
+              <span class="kpi__num" id="num-completed">–</span>
+              <span class="kpi__unit">件</span>
+              <span class="kpi__sub" id="sub-completed"></span>
+            </div>
+          </div>
+          <div class="kpi__foot"><span class="kpi__hint">一覧を見る ›</span></div>
+        </div>
+
+        <div class="kpi kpi--orange" onclick="showDetail('scheduled')" title="クリックで案件一覧">
+          <div class="kpi__header">
+            <span class="kpi__label">今週の検収完了予定</span>
+            <span class="kpi__badge">03</span>
+          </div>
+          <div class="kpi__period-wrap"><span class="kpi__period" id="note-this"></span></div>
+          <div class="kpi__body">
+            <div class="kpi__right">
+              <span class="kpi__num" id="num-scheduled">–</span>
+              <span class="kpi__unit">件</span>
+            </div>
+          </div>
+          <div class="kpi__foot"><span class="kpi__hint">一覧を見る ›</span></div>
+        </div>
+
+      </section>
+
+      <!-- 推移グラフ（一覧非表示時） -->
+      <section class="panel chart-panel" id="chart-section" hidden>
+        <div class="panel__head">
+          <div class="panel__title-wrap">
+            <span class="panel__icon">&#9646;</span>
+            <h2 class="panel__title">直近 7回の推移</h2>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- 先週③内訳 -->
+      <section class="panel" id="breakdown-panel" hidden>
+        <div class="panel__head">
+          <div class="panel__title-wrap">
+            <span class="panel__icon">&#9646;</span>
+            <h2 class="panel__title">先週の検収完了予定 内訳</h2>
+          </div>
+          <div class="panel__head-right">
+            <span class="panel__meta" id="breakdown-meta"></span>
+            <button class="detail__close" onclick="closeBreakdown()">✕ 閉じる</button>
+          </div>
+        </div>
+        <div class="bars">
+          <div class="bar-row">
+            <span class="bar-row__label">完了</span>
+            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--done" id="bar-done"></div></div>
+            <span class="bar-row__pct"   id="pct-done"></span>
+            <span class="bar-row__count" id="cnt-done">–</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-row__label">検収待</span>
+            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--wait" id="bar-waiting"></div></div>
+            <span class="bar-row__pct"   id="pct-waiting"></span>
+            <span class="bar-row__count" id="cnt-waiting">–</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-row__label">お客様都合</span>
+            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--cust" id="bar-customer"></div></div>
+            <span class="bar-row__pct"   id="pct-customer"></span>
+            <span class="bar-row__count" id="cnt-customer">–</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-row__label">sup 都合</span>
+            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--sup" id="bar-sup"></div></div>
+            <span class="bar-row__pct"   id="pct-sup"></span>
+            <span class="bar-row__count" id="cnt-sup">–</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-row__label">更新漏れ</span>
+            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--miss" id="bar-missed"></div></div>
+            <span class="bar-row__pct"   id="pct-missed"></span>
+            <span class="bar-row__count" id="cnt-missed">–</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 詳細パネル（KPIクリック時） -->
+      <section class="detail" id="detail-panel" hidden>
+        <div class="detail__head">
+          <div>
+            <h3 class="detail__title" id="detail-title"></h3>
+            <span class="detail__period" id="detail-period"></span>
+          </div>
+          <button class="detail__close" onclick="closeDetail()">✕ 閉じる</button>
+        </div>
+        <div class="detail__body">
+
+          <!-- 完了 / メインテーブル -->
+          <div class="detail__sub">
+            <div class="detail__sub-head" id="detail-main-head"></div>
+            <table class="detail-table" id="detail-table">
+              <thead id="detail-thead"></thead>
+              <tbody id="detail-tbody"></tbody>
+            </table>
+            <p class="detail__empty" id="detail-empty" hidden>対象データがありません</p>
+          </div>
+
+          <!-- 未完了テーブル（②クリック時のみ） -->
+          <div class="detail__sub" id="detail-incomplete" hidden>
+            <div class="detail__sub-head detail__sub-head--inc">
+              未完了一覧
+              <span class="detail__sub-badge" id="incomplete-count"></span>
+            </div>
+            <table class="detail-table" id="detail-table-incomplete">
+              <thead id="detail-thead-incomplete"></thead>
+              <tbody id="detail-tbody-incomplete"></tbody>
+            </table>
+            <p class="detail__empty" id="detail-empty-incomplete" hidden>対象データがありません</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- フッター -->
+      <footer class="footer">
+        <span id="footer-updated"></span>
+        <button id="btn-reload" onclick="reload()">再読み込み</button>
+      </footer>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

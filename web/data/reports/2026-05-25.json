@@ -1,0 +1,41 @@
+{
+  "report_date": "2026/5/25",
+  "period": { "start": "2026/5/18", "end": "2026/5/24" },
+  "this_week_period": { "start": "2026/5/25", "end": "2026/5/31" },
+  "last_report_date": "2026/5/18",
+  "counts": { "started": 4, "completed": 6, "scheduled": 9 },
+  "last_week_breakdown": {
+    "total": 7, "done": 6, "waiting": 0,
+    "customer_reason": 1, "sup_reason": 0, "missed_update": 0,
+    "incomplete_details": [
+      { "category": "cust", "cd": "PJ001632", "client": "有限会社テクノサービス", "name": "クラウド移行対応", "sales": "永江 恭", "pm": "前田 康行", "start_date": "2026/3/23", "delivery_date": "2026/6/15", "completion_date": "" }
+    ]
+  },
+  "details": {
+    "started": [
+      { "cd": "PJ001661", "client": "TOKYOフレッシュ株式会社",             "name": "ポイント管理機能",   "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/5/19", "delivery_date": "2026/6/20", "completion_date": "" },
+      { "cd": "PJ001662", "client": "株式会社山田商事",                     "name": "帳票出力機能改修",   "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/5/20", "delivery_date": "2026/6/10", "completion_date": "" },
+      { "cd": "PJ001663", "client": "有限会社テクノサービス",               "name": "クラウド移行対応",   "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/5/21", "delivery_date": "2026/7/31", "completion_date": "" },
+      { "cd": "PJ001664", "client": "ABC株式会社",                          "name": "監視ツール導入",     "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/5/22", "delivery_date": "2026/6/30", "completion_date": "" }
+    ],
+    "completed": [
+      { "cd": "PJ001630", "client": "TOKYOフレッシュ株式会社",  "name": "問い合わせフォーム改修",  "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/3/10", "delivery_date": "2026/5/19", "completion_date": "2026/5/19" },
+      { "cd": "PJ001631", "client": "株式会社山田商事",          "name": "CSVエクスポート対応",     "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/3/16", "delivery_date": "2026/5/20", "completion_date": "2026/5/20" },
+      { "cd": "PJ001632", "client": "有限会社テクノサービス",    "name": "多言語対応",              "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/3/23", "delivery_date": "2026/5/21", "completion_date": "2026/5/21" },
+      { "cd": "PJ001633", "client": "ABC株式会社",               "name": "パスワードポリシー強化",  "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/4/1",  "delivery_date": "2026/5/22", "completion_date": "2026/5/22" },
+      { "cd": "PJ001634", "client": "DEF商事株式会社",           "name": "キャッシュ最適化",        "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/4/7",  "delivery_date": "2026/5/23", "completion_date": "2026/5/23" },
+      { "cd": "PJ001635", "client": "GHI株式会社",               "name": "テスト自動化整備",        "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/4/10", "delivery_date": "2026/5/23", "completion_date": "2026/5/23" }
+    ],
+    "scheduled": [
+      { "cd": "PJ001650", "client": "TOKYOフレッシュ株式会社",  "name": "Webサイトリニューアル",   "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/3/2",  "delivery_date": "2026/5/26", "completion_date": "" },
+      { "cd": "PJ001651", "client": "株式会社山田商事",          "name": "基幹システム改修",        "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/3/9",  "delivery_date": "2026/5/27", "completion_date": "" },
+      { "cd": "PJ001652", "client": "有限会社テクノサービス",    "name": "モバイルアプリ開発",      "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/3/16", "delivery_date": "2026/5/27", "completion_date": "" },
+      { "cd": "PJ001653", "client": "ABC株式会社",               "name": "API連携対応",             "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/3/23", "delivery_date": "2026/5/28", "completion_date": "" },
+      { "cd": "PJ001654", "client": "DEF商事株式会社",           "name": "決済システム改修",        "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/4/1",  "delivery_date": "2026/5/28", "completion_date": "" },
+      { "cd": "PJ001655", "client": "GHI株式会社",               "name": "在庫管理機能追加",        "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/4/7",  "delivery_date": "2026/5/29", "completion_date": "" },
+      { "cd": "PJ001656", "client": "TOKYOフレッシュ株式会社",  "name": "レポート機能開発",        "sales": "加茂 美寿々", "pm": "清井 建行",  "start_date": "2026/4/10", "delivery_date": "2026/5/30", "completion_date": "" },
+      { "cd": "PJ001640", "client": "株式会社山田商事",          "name": "顧客管理システム",        "sales": "田中 一郎",   "pm": "鈴木 花子",  "start_date": "2026/4/1",  "delivery_date": "2026/5/30", "completion_date": "" },
+      { "cd": "PJ001641", "client": "有限会社テクノサービス",    "name": "メール通知機能",          "sales": "永江 恭",    "pm": "前田 康行",  "start_date": "2026/4/7",  "delivery_date": "2026/5/31", "completion_date": "" }
+    ]
+  }
+}

@@ -1,0 +1,308 @@
+{
+  "report_date": "2026/6/1",
+  "period": {
+    "start": "2026/5/25",
+    "end": "2026/5/31"
+  },
+  "this_week_period": {
+    "start": "2026/6/1",
+    "end": "2026/6/7"
+  },
+  "last_report_date": "2026/5/25",
+  "counts": {
+    "started": 2,
+    "completed": 11,
+    "scheduled": 0
+  },
+  "last_week_breakdown": {
+    "total": 19,
+    "prev_scheduled": 18,
+    "done": 10,
+    "waiting": 1,
+    "customer_reason": 0,
+    "sup_reason": 5,
+    "missed_update": 3,
+    "incomplete_details": [
+      {
+        "cd": "PJ001370",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[業託]株式会社B-Rサーティワンアイスクリーム 棚卸管理システム出荷データ日次自動取込機能開発",
+        "sales": "大畑 康弘",
+        "pm": "山田 稔",
+        "start_date": "2025/11/11",
+        "delivery_date": "2026/6/30",
+        "completion_date": "",
+        "progress": 0.96,
+        "dept": "WEBアプリケーション開発部",
+        "category": "sup"
+      },
+      {
+        "cd": "PJ001371",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[業託]株式会社B-Rサーティワンアイスクリーム 棚卸管理システムタブ棚卸任意タイミング実施機能開発",
+        "sales": "大畑 康弘",
+        "pm": "山田 稔",
+        "start_date": "2025/11/11",
+        "delivery_date": "2026/6/30",
+        "completion_date": "",
+        "progress": 0.96,
+        "dept": "WEBアプリケーション開発部",
+        "category": "sup"
+      },
+      {
+        "cd": "PJ001400",
+        "client": "株式会社セントラル科学貿易",
+        "name": "[受託]在庫月次確定機能および評価損処理機能の作成",
+        "sales": "堂尾 建人",
+        "pm": "伊藤 玲奈",
+        "start_date": "2025/11/26",
+        "delivery_date": "2026/5/31",
+        "completion_date": "",
+        "progress": 0.99,
+        "dept": "FileMaker開発1課",
+        "category": "waiting"
+      },
+      {
+        "cd": "PJ001461",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "日新火災海上保険株式会社様・Accessリプレイス",
+        "sales": "大畑 康弘",
+        "pm": "関口 雅治",
+        "start_date": "2025/12/19",
+        "delivery_date": "2026/7/31",
+        "completion_date": "",
+        "progress": 0.92,
+        "dept": "FileMaker開発2課",
+        "category": "sup"
+      },
+      {
+        "cd": "PJ001531",
+        "client": "世界平和統一家庭連合　清算人　弁護士　伊藤　尚",
+        "name": "[受託]やえす会",
+        "sales": "永瀬 正也",
+        "pm": "永井 信行",
+        "start_date": "2026/2/10",
+        "delivery_date": "2027/5/31",
+        "completion_date": "",
+        "progress": 0.95,
+        "dept": "WEBアプリケーション開発部",
+        "category": "sup"
+      },
+      {
+        "cd": "PJ001532",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]株式会社DFS様_ポータル追加およびサーバーサイドでのエクスポート出力とメール送付",
+        "sales": "加茂 美寿々",
+        "pm": "八周 緑蘭",
+        "start_date": "2026/2/10",
+        "delivery_date": "2026/5/29",
+        "completion_date": "",
+        "progress": 1,
+        "dept": "FileMaker開発1課",
+        "category": "missed"
+      },
+      {
+        "cd": "PJ001595",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[業託]MIRA株式会社_MIRAシステム-要件定義",
+        "sales": "大畑 康弘",
+        "pm": "山田 稔",
+        "start_date": "2026/3/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "",
+        "progress": 1,
+        "dept": "WEBアプリケーション開発部",
+        "category": "missed"
+      },
+      {
+        "cd": "PJ001631",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]VMスペックアップ_オーディーユージャパン株式会社_odu-japan",
+        "sales": "小野 友以佳",
+        "pm": "川原 翼",
+        "start_date": "2026/4/22",
+        "delivery_date": "2026/5/31",
+        "completion_date": "",
+        "progress": 0.96,
+        "dept": "南九州CSセンター",
+        "category": "missed"
+      },
+      {
+        "cd": "PJ001636",
+        "client": "株式会社ALL in",
+        "name": "[業託]株式会社ALL in様 資料割軽減単価向上施策の開発",
+        "sales": "堂尾 建人",
+        "pm": "山田 稔",
+        "start_date": "2026/3/4",
+        "delivery_date": "2026/6/30",
+        "completion_date": "",
+        "progress": 0.9,
+        "dept": "WEBアプリケーション開発部",
+        "category": "sup"
+      }
+    ]
+  },
+  "details": {
+    "started": [
+      {
+        "cd": "PJ001668",
+        "client": "TOKYOフレッシュ株式会社",
+        "name": "本番実装後の待機対応",
+        "sales": "加茂 美寿々",
+        "pm": "清井 建行",
+        "start_date": "2026/5/30",
+        "delivery_date": "2026/5/30",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "WEBアプリケーション開発部"
+      },
+      {
+        "cd": "PJ001675",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]ソニアキューブ（2026年6月暗号化対応作業）",
+        "sales": "永江 恭",
+        "pm": "前田 康行",
+        "start_date": "2026/5/28",
+        "delivery_date": "2026/6/30",
+        "completion_date": "",
+        "progress": "",
+        "dept": "薩摩R&Dセンター"
+      }
+    ],
+    "completed": [
+      {
+        "cd": "PJ001288",
+        "client": "エム・エーライフマテリアルズ株式会社",
+        "name": "[受託]新販売計画システム構築",
+        "sales": "徳永 万琳",
+        "pm": "木村 美穂",
+        "start_date": "2025/9/1",
+        "delivery_date": "2026/5/29",
+        "completion_date": "2026/5/26",
+        "progress": "",
+        "dept": "FileMaker開発1課"
+      },
+      {
+        "cd": "PJ001402",
+        "client": "旭有機材株式会社",
+        "name": "[受託]社内システム開発_SES業務委託(PM)12月〜5月",
+        "sales": "徳永 万琳",
+        "pm": "高嶋 直美",
+        "start_date": "2025/12/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "東北R&Dセンター"
+      },
+      {
+        "cd": "PJ001552",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]株式会社インチャージ様_データ分割",
+        "sales": "坂本 健太",
+        "pm": "秋葉 吉博",
+        "start_date": "2026/4/1",
+        "delivery_date": "2026/5/30",
+        "completion_date": "2026/5/25",
+        "progress": "",
+        "dept": "東北R&Dセンター"
+      },
+      {
+        "cd": "PJ001579",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[準委任]株式会社金融エンジニアリング・グループ_ローン審査管理パッケージ開発",
+        "sales": "吉田 幸太郎",
+        "pm": "尾﨑 健一郎",
+        "start_date": "2026/4/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "薩摩R&Dセンター"
+      },
+      {
+        "cd": "PJ001619",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]ぎょうせい様 PJ03-1　仕様管理",
+        "sales": "清井 建行",
+        "pm": "清井 建行",
+        "start_date": "2026/4/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "WEBアプリケーション開発部"
+      },
+      {
+        "cd": "PJ001620",
+        "client": "株式会社サポータス・システム・ソリューションズ",
+        "name": "[受託]ぎょうせい様 PJ4−6　例規単価表",
+        "sales": "清井 建行",
+        "pm": "清井 建行",
+        "start_date": "2026/4/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "WEBアプリケーション開発部"
+      },
+      {
+        "cd": "PJ001626",
+        "client": "キヤノンマーケティングジャパン株式会社",
+        "name": "[受託]仕様理解とドキュメント作成",
+        "sales": "堂尾 建人",
+        "pm": "䑓 慎太郎",
+        "start_date": "2026/4/15",
+        "delivery_date": "2026/4/30",
+        "completion_date": "2026/5/28",
+        "progress": "",
+        "dept": "薩摩R&Dセンター"
+      },
+      {
+        "cd": "PJ001642",
+        "client": "株式会社東日本住宅評価センター",
+        "name": "[保守]FileMaker基幹システムに係る総合開発支援[2026/05]",
+        "sales": "堂尾 建人",
+        "pm": "竹島 裕喜",
+        "start_date": "2026/5/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "FileMaker開発2課"
+      },
+      {
+        "cd": "PJ001661",
+        "client": "株式会社ソニック",
+        "name": "[受託]トップページ、予約導線改修",
+        "sales": "川畑 雄太",
+        "pm": "武藤 梨沙",
+        "start_date": "2026/5/12",
+        "delivery_date": "2026/5/29",
+        "completion_date": "2026/5/25",
+        "progress": "",
+        "dept": "ITソリューション事業本部"
+      },
+      {
+        "cd": "PJ001663",
+        "client": "株式会社アイシン",
+        "name": "[受託]2026年5月度 FileMakerシステム維持支援",
+        "sales": "徳永 万琳",
+        "pm": "関口 雅治",
+        "start_date": "2026/5/1",
+        "delivery_date": "2026/5/31",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "FileMaker開発2課"
+      },
+      {
+        "cd": "PJ001668",
+        "client": "TOKYOフレッシュ株式会社",
+        "name": "本番実装後の待機対応",
+        "sales": "加茂 美寿々",
+        "pm": "清井 建行",
+        "start_date": "2026/5/30",
+        "delivery_date": "2026/5/30",
+        "completion_date": "2026/5/31",
+        "progress": "",
+        "dept": "WEBアプリケーション開発部"
+      }
+    ],
+    "scheduled": []
+  }
+}
