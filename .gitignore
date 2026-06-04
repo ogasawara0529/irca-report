@@ -1,0 +1,23 @@
+# 認証情報・シークレット（絶対にコミットしない）
+config.env
+
+# ローカルデータ（Neon に移行済み）
+data/
+state.json
+
+# ログ
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# macOS
+.DS_Store
+
+# スクリーンショット作業用
+/tmp/
+capture_docs.py
+migrate_to_neon.py

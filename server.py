@@ -10,9 +10,11 @@ import logging
 import os
 import requests as req
 from datetime import date
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session, redirect
+from functools import wraps
 from pathlib import Path
 from urllib.parse import quote
+from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
@@ -46,7 +48,7 @@ CUSTOMER_KEYWORDS     = [k.strip() for k in os.environ.get('CUSTOMER_REASON_KEYW
 FM_FIELD_PROJECT_NAME  = os.environ.get('FM_FIELD_PROJECT_NAME', 'プロジェクト名')
 FM_DATE_FORMAT         = os.environ.get('FM_DATE_FORMAT', 'YYYYMD')
 FM_LAYOUT_BREAKDOWN    = os.environ.get('FM_LAYOUT_BREAKDOWN', FM_LAYOUT)
-PORT                   = int(os.environ.get('SERVER_PORT', '5001'))
+PORT                   = int(os.environ.get('PORT', os.environ.get('SERVER_PORT', '5001')))
 
 BASE_URL                  = f'https://{FM_HOST}/fmi/data/v1/databases/{FM_DATABASE}'
 LAYOUT_ENCODED            = quote(FM_LAYOUT)
@@ -54,7 +56,49 @@ LAYOUT_BREAKDOWN_ENCODED  = quote(FM_LAYOUT_BREAKDOWN)
 PROJECT_TYPE   = 'プロジェクト型'
 PORTAL_NAME    = 'プロジェクト_納品日変更履歴'
 
+SECRET_KEY = os.environ.get('SECRET_KEY', 'irca-change-this-secret-key')
+
 app = Flask(__name__)
+app.secret_key = SECRET_KEY
+
+# DB モジュールをインポート（DATABASE_URL が設定されていれば使用）
+import db as _db
+_db.DATABASE_URL = os.environ.get('DATABASE_URL', '')
+USE_DB = bool(_db.DATABASE_URL)
+
+if USE_DB:
+    try:
+        _db.init_db()
+        # 初回起動時にデフォルト管理者が存在しなければ作成
+        if _db.account_count() == 0:
+            _db.create_account('admin', generate_password_hash('admin', method='pbkdf2:sha256'), role='admin')
+            logger.info('デフォルト管理者アカウントを作成しました (admin/admin)')
+        logger.info('Neon DB 接続成功')
+    except Exception as e:
+        logger.error(f'Neon DB 接続失敗: {e}')
+        USE_DB = False
+
+
+# ── 認証デコレータ ─────────────────────────────────────────────
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user' not in session:
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'unauthorized'}), 401
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user' not in session:
+            return jsonify({'error': 'unauthorized'}), 401
+        if session['user'].get('role') != 'admin':
+            return jsonify({'error': 'forbidden'}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 
 # ── CORS ヘッダー（IIS との共存用）───────────────────────────
@@ -258,6 +302,7 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
         all_bd_recs = client.records_breakdown([base], portal=[PORTAL_NAME])
 
     count_done = count_wait = count_cust = count_sup = count_missed = 0
+    complete_details  = []
     incomplete_details = []
 
     for rec in all_bd_recs:
@@ -266,6 +311,8 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
 
         if delivery_day and p2s <= delivery_day <= p2e:
             count_done += 1
+            d_rec = _detail(rec); d_rec['category'] = 'done'
+            complete_details.append(d_rec)
         elif fd.get('status', '') == '納品済・検収待':
             count_wait += 1
             d = _detail(rec); d['category'] = 'waiting'
@@ -297,9 +344,11 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
         'last_week_breakdown': {
             'total':          len(all_bd_recs),   # 内訳計算用（報告日_朝会がセットされた実件数）
             'prev_scheduled': prev_scheduled,      # ②サブ表示の Y（前回レポートの③件数）
-            'done':           count_done, 'waiting': count_wait,
-            'customer_reason': count_cust, 'sup_reason': count_sup,
-            'missed_update':  count_missed, 'incomplete_details': incomplete_details,
+            'done':              count_done, 'waiting': count_wait,
+            'customer_reason':   count_cust, 'sup_reason': count_sup,
+            'missed_update':     count_missed,
+            'complete_details':  complete_details,
+            'incomplete_details': incomplete_details,
         },
         'details': {
             'started':   [_detail(r) for r in recs_1],
@@ -310,22 +359,22 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
 
 
 def save_report(result: dict, report_date: date) -> str:
-    DATA_DIR.mkdir(exist_ok=True)
-    (DATA_DIR / 'reports').mkdir(exist_ok=True)
-
     date_iso = report_date.isoformat()
-    out      = json.dumps(result, ensure_ascii=False, indent=2)
-
-    (DATA_DIR / 'report.json').write_text(out, encoding='utf-8')
-    (DATA_DIR / 'reports' / f'{date_iso}.json').write_text(out, encoding='utf-8')
-
-    index_path = DATA_DIR / 'index.json'
-    dates_list = json.loads(index_path.read_text(encoding='utf-8')) if index_path.exists() else []
-    if date_iso not in dates_list:
-        dates_list.append(date_iso)
-    dates_list.sort(reverse=True)
-    index_path.write_text(json.dumps(dates_list, ensure_ascii=False), encoding='utf-8')
-
+    if USE_DB:
+        _db.save_report(date_iso, result)
+    else:
+        # ファイルフォールバック
+        DATA_DIR.mkdir(exist_ok=True)
+        (DATA_DIR / 'reports').mkdir(exist_ok=True)
+        out = json.dumps(result, ensure_ascii=False, indent=2)
+        (DATA_DIR / 'report.json').write_text(out, encoding='utf-8')
+        (DATA_DIR / 'reports' / f'{date_iso}.json').write_text(out, encoding='utf-8')
+        index_path = DATA_DIR / 'index.json'
+        dates_list = json.loads(index_path.read_text(encoding='utf-8')) if index_path.exists() else []
+        if date_iso not in dates_list:
+            dates_list.append(date_iso)
+        dates_list.sort(reverse=True)
+        index_path.write_text(json.dumps(dates_list, ensure_ascii=False), encoding='utf-8')
     logger.info(f'保存完了: {date_iso}')
     return date_iso
 
@@ -344,48 +393,45 @@ def api_collect():
         p2s = pd('period2_start'); p2e = pd('period2_end')
         p3s = pd('period3_start'); p3e = pd('period3_end')
 
-        # 先週の報告日：report_date より前の直近日付（新規・修正どちらも正しく動作）
-        index_path = DATA_DIR / 'index.json'
-        if index_path.exists():
-            dates = json.loads(index_path.read_text(encoding='utf-8'))
-            prev = [d for d in dates if d < body['report_date']]
-            last_report = date.fromisoformat(prev[0]) if prev else p1s
+        # 先週の報告日（DB優先）
+        if USE_DB:
+            prev_dates = [d for d in _db.get_index() if d < body['report_date']]
+            last_report = date.fromisoformat(prev_dates[0]) if prev_dates else p1s
         else:
-            last_report = p1s
+            index_path = DATA_DIR / 'index.json'
+            dates_list = json.loads(index_path.read_text(encoding='utf-8')) if index_path.exists() else []
+            prev = [d for d in dates_list if d < body['report_date']]
+            last_report = date.fromisoformat(prev[0]) if prev else p1s
 
-        original_date = body.get('original_date')  # 修正前の日付（修正モードのみ）
+        original_date = body.get('original_date')
 
-        # 前回レポートの③予定件数を取得（サブ表示の Y に使用）
+        # 前回レポートの③予定件数
         prev_scheduled = 0
-        prev_file = DATA_DIR / 'reports' / f'{last_report.isoformat()}.json'
-        if prev_file.exists():
-            try:
-                prev_data = json.loads(prev_file.read_text(encoding='utf-8'))
+        try:
+            prev_data = _db.load_report(last_report.isoformat()) if USE_DB else None
+            if not prev_data:
+                prev_file = DATA_DIR / 'reports' / f'{last_report.isoformat()}.json'
+                if prev_file.exists():
+                    prev_data = json.loads(prev_file.read_text(encoding='utf-8'))
+            if prev_data:
                 prev_scheduled = prev_data.get('counts', {}).get('scheduled', 0)
                 logger.info(f'前回③件数: {prev_scheduled}')
-            except Exception:
-                pass
+        except Exception:
+            pass
 
         logger.info(f'登録開始 報告日:{report_date}  ①:{p1s}〜{p1e}  ②:{p2s}〜{p2e}  ③:{p3s}〜{p3e}')
         result   = run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_scheduled)
         date_iso = save_report(result, report_date)
 
-        # 報告日が変わった場合: 古いファイルを削除してインデックスを更新
+        # 報告日が変わった場合：古いレコードを削除
         if original_date and original_date != date_iso:
-            old_file = DATA_DIR / 'reports' / f'{original_date}.json'
-            if old_file.exists():
-                old_file.unlink()
-                logger.info(f'古いレポート削除: {original_date}')
-
-            index_path = DATA_DIR / 'index.json'
-            if index_path.exists():
-                dates = json.loads(index_path.read_text(encoding='utf-8'))
-                if original_date in dates:
-                    dates.remove(original_date)
-                    dates.sort(reverse=True)
-                    index_path.write_text(
-                        json.dumps(dates, ensure_ascii=False), encoding='utf-8'
-                    )
+            if USE_DB:
+                _db.delete_report(original_date)
+            else:
+                old_file = DATA_DIR / 'reports' / f'{original_date}.json'
+                if old_file.exists():
+                    old_file.unlink()
+            logger.info(f'古いレポート削除: {original_date}')
 
         return jsonify({'success': True, 'date_iso': date_iso, 'data': result})
 
@@ -399,31 +445,19 @@ def api_delete():
     try:
         date_iso = request.get_json()['date_iso']
 
-        # レポートファイルを削除
-        report_file = DATA_DIR / 'reports' / f'{date_iso}.json'
-        if report_file.exists():
-            report_file.unlink()
-
-        # index.json から除去
-        index_path = DATA_DIR / 'index.json'
-        if index_path.exists():
-            dates = json.loads(index_path.read_text(encoding='utf-8'))
-            if date_iso in dates:
-                dates.remove(date_iso)
-                dates.sort(reverse=True)
-                index_path.write_text(json.dumps(dates, ensure_ascii=False), encoding='utf-8')
-
-        # report.json を最新の残存レポートに更新
-        remaining = json.loads(index_path.read_text(encoding='utf-8')) if index_path.exists() else []
-        if remaining:
-            latest = DATA_DIR / 'reports' / f'{remaining[0]}.json'
-            if latest.exists():
-                (DATA_DIR / 'report.json').write_text(
-                    latest.read_text(encoding='utf-8'), encoding='utf-8'
-                )
+        if USE_DB:
+            _db.delete_report(date_iso)
         else:
-            if (DATA_DIR / 'report.json').exists():
-                (DATA_DIR / 'report.json').unlink()
+            report_file = DATA_DIR / 'reports' / f'{date_iso}.json'
+            if report_file.exists():
+                report_file.unlink()
+            index_path = DATA_DIR / 'index.json'
+            if index_path.exists():
+                dates = json.loads(index_path.read_text(encoding='utf-8'))
+                if date_iso in dates:
+                    dates.remove(date_iso)
+                    dates.sort(reverse=True)
+                    index_path.write_text(json.dumps(dates, ensure_ascii=False), encoding='utf-8')
 
         logger.info(f'削除完了: {date_iso}')
         return jsonify({'success': True})
@@ -433,20 +467,200 @@ def api_delete():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# ── 認証 API ─────────────────────────────────────────────────
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    body = request.get_json()
+    username = (body.get('username') or '').strip()
+    password = body.get('password') or ''
+
+    user = _db.get_account_by_username(username) if USE_DB else next(
+        (a for a in _load_accounts_file() if a['username'] == username), None
+    )
+
+    if not user or not check_password_hash(user['password_hash'], password):
+        return jsonify({'success': False, 'error': 'アカウントまたはパスワードが正しくありません'}), 401
+    if user['status'] != 'active':
+        return jsonify({'success': False, 'error': 'このアカウントは停止中です'}), 403
+
+    session['user'] = {'no': user['no'], 'username': user['username'], 'role': user['role']}
+    logger.info(f'ログイン: {username}')
+    return jsonify({'success': True, 'role': user['role']})
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.pop('user', None)
+    return jsonify({'success': True})
+
+@app.route('/api/me')
+@login_required
+def api_me():
+    return jsonify(session['user'])
+
+
+# ── アカウント管理 API ────────────────────────────────────────
+@app.route('/api/accounts', methods=['GET'])
+@admin_required
+def api_accounts_list():
+    accounts = _db.get_accounts() if USE_DB else _load_accounts_file()
+    safe = [{k: v for k, v in a.items() if k != 'password_hash'} for a in accounts]
+    # created_at を文字列に変換
+    for a in safe:
+        if hasattr(a.get('created_at'), 'isoformat'):
+            a['created_at'] = a['created_at'].isoformat()
+    return jsonify(safe)
+
+@app.route('/api/accounts', methods=['POST'])
+@admin_required
+def api_accounts_create():
+    try:
+        body     = request.get_json()
+        username = (body.get('username') or '').strip()
+        password = body.get('password') or ''
+        role     = body.get('role', 'user')
+        status   = body.get('status', 'active')
+
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'アカウントとパスワードは必須です'}), 400
+
+        if USE_DB:
+            if _db.get_account_by_username(username):
+                return jsonify({'success': False, 'error': 'このアカウントは既に存在します'}), 400
+            new_no = _db.create_account(username, generate_password_hash(password, method='pbkdf2:sha256'), role, status)
+        else:
+            accounts = _load_accounts_file()
+            if any(a['username'] == username for a in accounts):
+                return jsonify({'success': False, 'error': 'このアカウントは既に存在します'}), 400
+            new_no = max((a['no'] for a in accounts), default=0) + 1
+            accounts.append({'no': new_no, 'created_at': date.today().isoformat(), 'username': username,
+                              'password_hash': generate_password_hash(password, method='pbkdf2:sha256'),
+                              'status': status, 'role': role})
+            _save_accounts_file(accounts)
+        return jsonify({'success': True, 'no': new_no})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/accounts/<int:no>', methods=['PUT'])
+@admin_required
+def api_accounts_update(no):
+    try:
+        body = request.get_json()
+        fields = {}
+        if body.get('username'):
+            if USE_DB:
+                existing = _db.get_account_by_username(body['username'])
+                if existing and existing['no'] != no:
+                    return jsonify({'success': False, 'error': 'このアカウント名は既に使用されています'}), 400
+            fields['username'] = body['username'].strip()
+        if body.get('password'):
+            fields['password_hash'] = generate_password_hash(body['password'], method='pbkdf2:sha256')
+        if 'role'   in body: fields['role']   = body['role']
+        if 'status' in body: fields['status'] = body['status']
+
+        if USE_DB:
+            _db.update_account(no, fields)
+        else:
+            accounts = _load_accounts_file()
+            target = next((a for a in accounts if a['no'] == no), None)
+            if not target:
+                return jsonify({'success': False, 'error': '対象アカウントが見つかりません'}), 404
+            target.update(fields)
+            _save_accounts_file(accounts)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/accounts/<int:no>', methods=['DELETE'])
+@admin_required
+def api_accounts_delete(no):
+    try:
+        if session['user']['no'] == no:
+            return jsonify({'success': False, 'error': '自分自身は削除できません'}), 400
+        if USE_DB:
+            _db.delete_account_by_no(no)
+        else:
+            accounts = [a for a in _load_accounts_file() if a['no'] != no]
+            _save_accounts_file(accounts)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── ファイルフォールバック ────────────────────────────────────
+def _load_accounts_file():
+    f = DATA_DIR / 'accounts.json'
+    return json.loads(f.read_text(encoding='utf-8')) if f.exists() else []
+
+def _save_accounts_file(accounts):
+    DATA_DIR.mkdir(exist_ok=True)
+    (DATA_DIR / 'accounts.json').write_text(json.dumps(accounts, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+# ── データ配信（DB優先） ──────────────────────────────────────
+@app.route('/data/index.json')
+@login_required
+def data_index():
+    if USE_DB:
+        return jsonify(_db.get_index())
+    p = DATA_DIR / 'index.json'
+    return jsonify(json.loads(p.read_text(encoding='utf-8')) if p.exists() else [])
+
+@app.route('/data/report.json')
+@login_required
+def data_report_latest():
+    if USE_DB:
+        data = _db.get_latest_report()
+        return jsonify(data) if data else (jsonify({}), 404)
+    p = DATA_DIR / 'report.json'
+    return jsonify(json.loads(p.read_text(encoding='utf-8'))) if p.exists() else (jsonify({}), 404)
+
+@app.route('/data/reports/<date_iso>.json')
+@login_required
+def data_report_by_date(date_iso):
+    if USE_DB:
+        data = _db.load_report(date_iso)
+        return jsonify(data) if data else (jsonify({}), 404)
+    p = DATA_DIR / 'reports' / f'{date_iso}.json'
+    return jsonify(json.loads(p.read_text(encoding='utf-8'))) if p.exists() else (jsonify({}), 404)
+
+
 # ── 静的ファイル配信 ──────────────────────────────────────────
+@app.route('/login')
+def login_page():
+    if 'user' in session:
+        return redirect('/')
+    return send_from_directory(BASE_DIR / 'web', 'login.html')
+
 @app.route('/')
+@login_required
 def index():
     return send_from_directory(BASE_DIR / 'web', 'index.html')
 
+@app.route('/accounts')
+@login_required
+def accounts_page():
+    if session['user'].get('role') != 'admin':
+        return redirect('/')
+    return send_from_directory(BASE_DIR / 'web', 'accounts.html')
+
 @app.route('/data/<path:path>')
+@login_required
 def serve_data(path):
     return send_from_directory(DATA_DIR, path)
 
+# ログインページのアセットは認証不要
+_PUBLIC = {'login.html', 'login.css', 'style.css'}
+
 @app.route('/<path:path>')
 def serve_static(path):
+    if path in _PUBLIC or path.startswith('accounts'):
+        return send_from_directory(BASE_DIR / 'web', path)
+    if 'user' not in session:
+        return redirect('/login')
     return send_from_directory(BASE_DIR / 'web', path)
 
 
 if __name__ == '__main__':
+    # DB は起動時に既に init_db() 済み
     logger.info(f'サーバー起動: port={PORT}')
     app.run(host='0.0.0.0', port=PORT, debug=False)

@@ -283,6 +283,7 @@ def collect(client: FileMakerClient, d: dict) -> dict:
     count_cust   = 0
     count_sup    = 0
     count_missed = 0
+    complete_details   = []
     incomplete_details = []
 
     for rec in all_bd_recs:
@@ -291,6 +292,8 @@ def collect(client: FileMakerClient, d: dict) -> dict:
 
         if delivery_day and d['prev_start'] <= delivery_day <= d['prev_end']:
             count_done += 1
+            d_rec = _detail_started(rec); d_rec['category'] = 'done'
+            complete_details.append(d_rec)
         elif fd.get('status', '') == '納品済・検収待':
             count_wait += 1
             detail = _detail_started(rec)
@@ -339,6 +342,7 @@ def collect(client: FileMakerClient, d: dict) -> dict:
             'customer_reason':    count_cust,
             'sup_reason':         count_sup,
             'missed_update':      count_missed,
+            'complete_details':   complete_details,
             'incomplete_details': incomplete_details,
         },
         'details': {

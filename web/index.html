@@ -25,6 +25,16 @@
     <div class="topbar__right">
       <span class="topbar__dot"></span>
       <span id="report-meta">読み込み中...</span>
+      <a href="/accounts" id="accounts-link" hidden
+        style="font-size:.72rem;color:rgba(255,255,255,.6);text-decoration:none;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;transition:background .15s"
+        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background=''">
+        アカウント管理
+      </a>
+      <span id="topbar-user" style="font-size:.72rem;color:rgba(255,255,255,.5)"></span>
+      <button id="logout-btn" hidden onclick="doLogout()"
+        style="font-size:.72rem;color:rgba(255,255,255,.55);background:none;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;cursor:pointer">
+        ログアウト
+      </button>
     </div>
   </div>
 
@@ -159,7 +169,11 @@
       <section class="panel chart-panel" id="chart-section" hidden>
         <div class="panel__head">
           <div class="panel__title-wrap">
-            <span class="panel__icon">&#9646;</span>
+            <svg class="panel__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="1,12 5,7 8,9 11,4 15,2" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <line x1="1" y1="14" x2="15" y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="1" y1="1"  x2="1"  y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
             <h2 class="panel__title">直近 7回の推移</h2>
           </div>
         </div>
@@ -172,7 +186,11 @@
       <section class="panel" id="breakdown-panel" hidden>
         <div class="panel__head">
           <div class="panel__title-wrap">
-            <span class="panel__icon">&#9646;</span>
+            <svg class="panel__icon" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.5 1A6.5 6.5 0 1 1 1 7.5h6.5V1z" fill="#0d9488" opacity=".85"/>
+              <path d="M7.5 1v6.5H14A6.5 6.5 0 0 0 7.5 1z" fill="#0d9488" opacity=".4"/>
+              <circle cx="7.5" cy="7.5" r="6.5" stroke="#0d9488" stroke-width="1.2" fill="none"/>
+            </svg>
             <h2 class="panel__title">先週の検収完了予定 内訳</h2>
           </div>
           <div class="panel__head-right">
@@ -180,36 +198,41 @@
             <button class="detail__close" onclick="closeBreakdown()">✕ 閉じる</button>
           </div>
         </div>
-        <div class="bars">
-          <div class="bar-row">
-            <span class="bar-row__label">完了</span>
-            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--done" id="bar-done"></div></div>
-            <span class="bar-row__pct"   id="pct-done"></span>
-            <span class="bar-row__count" id="cnt-done">–</span>
+        <div class="breakdown-body">
+          <div class="bars">
+            <div class="bar-row bar-row--clickable" id="brow-done" onclick="applyBreakdownFilter('done')">
+              <span class="bar-row__label">完了</span>
+              <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--done" id="bar-done"></div></div>
+              <span class="bar-row__pct"   id="pct-done"></span>
+              <span class="bar-row__count" id="cnt-done">–</span>
+            </div>
+            <div class="bar-row bar-row--clickable" id="brow-waiting" onclick="applyBreakdownFilter('waiting')">
+              <span class="bar-row__label">検収待</span>
+              <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--wait" id="bar-waiting"></div></div>
+              <span class="bar-row__pct"   id="pct-waiting"></span>
+              <span class="bar-row__count" id="cnt-waiting">–</span>
+            </div>
+            <div class="bar-row bar-row--clickable" id="brow-cust" onclick="applyBreakdownFilter('cust')">
+              <span class="bar-row__label">お客様都合</span>
+              <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--cust" id="bar-customer"></div></div>
+              <span class="bar-row__pct"   id="pct-customer"></span>
+              <span class="bar-row__count" id="cnt-customer">–</span>
+            </div>
+            <div class="bar-row bar-row--clickable" id="brow-sup" onclick="applyBreakdownFilter('sup')">
+              <span class="bar-row__label">sup 都合</span>
+              <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--sup" id="bar-sup"></div></div>
+              <span class="bar-row__pct"   id="pct-sup"></span>
+              <span class="bar-row__count" id="cnt-sup">–</span>
+            </div>
+            <div class="bar-row bar-row--clickable" id="brow-missed" onclick="applyBreakdownFilter('missed')">
+              <span class="bar-row__label">更新漏れ</span>
+              <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--miss" id="bar-missed"></div></div>
+              <span class="bar-row__pct"   id="pct-missed"></span>
+              <span class="bar-row__count" id="cnt-missed">–</span>
+            </div>
           </div>
-          <div class="bar-row">
-            <span class="bar-row__label">検収待</span>
-            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--wait" id="bar-waiting"></div></div>
-            <span class="bar-row__pct"   id="pct-waiting"></span>
-            <span class="bar-row__count" id="cnt-waiting">–</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-row__label">お客様都合</span>
-            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--cust" id="bar-customer"></div></div>
-            <span class="bar-row__pct"   id="pct-customer"></span>
-            <span class="bar-row__count" id="cnt-customer">–</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-row__label">sup 都合</span>
-            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--sup" id="bar-sup"></div></div>
-            <span class="bar-row__pct"   id="pct-sup"></span>
-            <span class="bar-row__count" id="cnt-sup">–</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-row__label">更新漏れ</span>
-            <div class="bar-row__track"><div class="bar-row__fill bar-row__fill--miss" id="bar-missed"></div></div>
-            <span class="bar-row__pct"   id="pct-missed"></span>
-            <span class="bar-row__count" id="cnt-missed">–</span>
+          <div class="breakdown-pie-wrap">
+            <canvas id="breakdown-pie"></canvas>
           </div>
         </div>
       </section>

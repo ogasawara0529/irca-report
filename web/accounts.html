@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウント管理 - iRCA Project</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow:auto; height:auto; min-height:100vh; }
+    .ac-main { max-width:1000px; margin:0 auto; padding:32px 28px 60px; }
+    .ac-toolbar {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .ac-title { font-size:1.1rem; font-weight:700; color:var(--text-hi); }
+    .ac-table { width:100%; border-collapse:collapse; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    .ac-table th {
+      font-size:0.72rem; font-weight:700; color:var(--muted);
+      padding:10px 14px; border-bottom:2px solid var(--border);
+      text-align:left; background:var(--page-bg); white-space:nowrap;
+    }
+    .ac-table td { font-size:0.82rem; padding:12px 14px; border-bottom:1px solid var(--border); color:var(--text); }
+    .ac-table tr:last-child td { border-bottom:none; }
+    .ac-table tbody tr:hover td { background:var(--blue-lt); }
+    .status-badge {
+      display:inline-block; font-size:0.68rem; font-weight:700;
+      padding:3px 9px; border-radius:12px;
+    }
+    .status-active   { background:#dcfce7; color:#166534; }
+    .status-inactive { background:#fee2e2; color:#991b1b; }
+    .role-badge {
+      display:inline-block; font-size:0.68rem; font-weight:600;
+      padding:2px 8px; border-radius:10px;
+    }
+    .role-admin { background:var(--blue-lt); color:var(--blue); }
+    .role-user  { background:var(--page-bg); color:var(--muted); border:1px solid var(--border); }
+    .ac-actions { display:flex; gap:6px; }
+    .ac-btn {
+      font-size:0.7rem; font-weight:600; padding:4px 10px;
+      border-radius:5px; border:1px solid; cursor:pointer;
+      transition:opacity .15s;
+    }
+    .ac-btn:hover { opacity:.8; }
+    .ac-btn--edit   { color:var(--blue);  border-color:var(--blue-mid);  background:var(--blue-lt); }
+    .ac-btn--toggle { color:var(--teal);  border-color:var(--teal-mid);  background:var(--teal-lt); }
+    .ac-btn--stop   { color:#f97316;       border-color:#fed7aa;          background:#fff7ed; }
+    .ac-btn--del    { color:#dc2626;       border-color:#fca5a5;          background:#fee2e2; }
+    .topbar-link {
+      font-size:0.78rem; color:rgba(255,255,255,.65); text-decoration:none;
+      padding:5px 12px; border:1px solid rgba(255,255,255,.25); border-radius:6px;
+      transition:background .15s;
+    }
+    .topbar-link:hover { background:rgba(255,255,255,.1); }
+    .topbar-user { font-size:0.75rem; color:rgba(255,255,255,.55); }
+    .topbar-logout {
+      font-size:0.72rem; color:rgba(255,255,255,.55); background:none;
+      border:1px solid rgba(255,255,255,.2); border-radius:5px;
+      padding:4px 10px; cursor:pointer; transition:background .15s;
+    }
+    .topbar-logout:hover { background:rgba(255,255,255,.1); color:#fff; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar__brand">
+      <svg class="topbar__icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M3 2.5A1.5 1.5 0 014.5 1h6.5l4 4v10.5A1.5 1.5 0 0113.5 17h-9A1.5 1.5 0 013 15.5V2.5z" stroke="#60a5fa" stroke-width="1.4" fill="none"/>
+        <path d="M11 1v4.5h4" stroke="#60a5fa" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        <line x1="6" y1="8.5"  x2="12" y2="8.5"  stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="6" y1="11"   x2="12" y2="11"   stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="6" y1="13.5" x2="9.5" y2="13.5" stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="topbar__name">iRCA Project</span>
+    </div>
+    <div class="topbar__center">アカウント管理</div>
+    <div class="topbar__right" style="gap:12px">
+      <span class="topbar-user" id="current-user"></span>
+      <a href="/" class="topbar-link">ダッシュボード</a>
+      <button class="topbar-logout" onclick="doLogout()">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="ac-main">
+    <div class="ac-toolbar">
+      <span class="ac-title">アカウント一覧</span>
+      <button class="btn-register" onclick="openModal()">＋ 新規登録</button>
+    </div>
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>登録日</th>
+          <th>アカウント</th>
+          <th>ステータス</th>
+          <th>権限</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="ac-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- アカウント登録・編集モーダル -->
+  <div class="modal-overlay" id="ac-modal" hidden>
+    <div class="modal">
+      <div class="modal__head">
+        <h2 class="modal__title" id="modal-title">新規登録</h2>
+        <button class="modal__close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal__body">
+        <input type="hidden" id="edit-no" value="">
+        <div class="form-group">
+          <label class="form-label">アカウント</label>
+          <input type="text" class="form-input" id="f-username" placeholder="アカウント名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">パスワード <span style="font-weight:400;color:var(--muted)" id="pw-hint">（変更する場合のみ入力）</span></label>
+          <input type="password" class="form-input" id="f-password" placeholder="パスワード">
+        </div>
+        <div class="form-group">
+          <label class="form-label">権限</label>
+          <select class="form-input" id="f-role">
+            <option value="user">ユーザー</option>
+            <option value="admin">管理者</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ステータス</label>
+          <select class="form-input" id="f-status">
+            <option value="active">利用中</option>
+            <option value="inactive">停止中</option>
+          </select>
+        </div>
+        <p class="form-note" id="modal-error" hidden></p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+        <button class="btn-register" id="modal-save-btn" onclick="saveAccount()">登録</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="accounts.js"></script>
+</body>
+</html>
