@@ -9,40 +9,27 @@
 </head>
 <body>
 
-  <!-- トップバー -->
-  <div class="topbar">
-    <div class="topbar__brand">
-      <svg class="topbar__icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 2.5A1.5 1.5 0 014.5 1h6.5l4 4v10.5A1.5 1.5 0 0113.5 17h-9A1.5 1.5 0 013 15.5V2.5z" stroke="#60a5fa" stroke-width="1.4" fill="none"/>
-        <path d="M11 1v4.5h4" stroke="#60a5fa" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
-        <line x1="6" y1="8.5"  x2="12" y2="8.5"  stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="6" y1="11"   x2="12" y2="11"   stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="6" y1="13.5" x2="9.5" y2="13.5" stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-      <span class="topbar__name">iRCA Project</span>
-    </div>
-    <div class="topbar__center">週次プロジェクト報告</div>
-    <div class="topbar__right">
-      <span class="topbar__dot"></span>
-      <span id="report-meta">読み込み中...</span>
-      <a href="/accounts" id="accounts-link" hidden
-        style="font-size:.72rem;color:rgba(255,255,255,.6);text-decoration:none;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;transition:background .15s"
-        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background=''">
-        アカウント管理
-      </a>
-      <span id="topbar-user" style="font-size:.72rem;color:rgba(255,255,255,.5)"></span>
-      <button id="logout-btn" hidden onclick="doLogout()"
-        style="font-size:.72rem;color:rgba(255,255,255,.55);background:none;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;cursor:pointer">
-        ログアウト
-      </button>
-    </div>
-  </div>
-
   <!-- アプリ本体 -->
   <div class="app-body">
 
     <!-- 左サイドバー（履歴） -->
     <aside class="sidebar">
+
+      <!-- ブランド -->
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-logo" onclick="toggleSidebar()" title="サイドバーを開閉">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 2.5A1.5 1.5 0 014.5 1h6.5l4 4v10.5A1.5 1.5 0 0113.5 17h-9A1.5 1.5 0 013 15.5V2.5z" stroke="#60a5fa" stroke-width="1.4" fill="none"/>
+            <path d="M11 1v4.5h4" stroke="#60a5fa" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+            <line x1="6" y1="8.5"  x2="12" y2="8.5"  stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="6" y1="11"   x2="12" y2="11"   stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="6" y1="13.5" x2="9.5" y2="13.5" stroke="#60a5fa" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <span>iRCA Project</span>
+        </div>
+      </div>
+
+      <!-- 報告履歴 -->
       <div class="sidebar__header">
         <span>報告履歴</span>
         <button class="sidebar__new-btn" onclick="openRegisterModal()" title="新規データ登録">＋ 新規</button>
@@ -50,6 +37,14 @@
       <ul class="sidebar__list" id="date-list">
         <li class="sidebar__loading">読み込み中...</li>
       </ul>
+
+      <!-- アカウント・ログアウト -->
+      <div class="sidebar__footer">
+        <span id="topbar-user" class="sidebar__footer-user"></span>
+        <a href="/accounts" id="accounts-link" hidden class="sidebar__footer-link">アカウント管理</a>
+        <button id="logout-btn" hidden onclick="doLogout()" class="sidebar__footer-btn">ログアウト</button>
+      </div>
+
     </aside>
 
     <!-- 新規登録モーダル -->
@@ -114,6 +109,11 @@
     <!-- メインコンテンツ -->
     <main class="main">
 
+      <div class="page-header">
+        <h1 class="page-title">週次プロジェクト報告</h1>
+        <p class="report-meta-line"><span id="report-meta">読み込み中...</span></p>
+      </div>
+
       <!-- KPI カード -->
       <section class="kpi-row">
 
@@ -163,23 +163,6 @@
           <div class="kpi__foot"><span class="kpi__hint">一覧を見る ›</span></div>
         </div>
 
-      </section>
-
-      <!-- 推移グラフ（一覧非表示時） -->
-      <section class="panel chart-panel" id="chart-section" hidden>
-        <div class="panel__head">
-          <div class="panel__title-wrap">
-            <svg class="panel__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polyline points="1,12 5,7 8,9 11,4 15,2" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <line x1="1" y1="14" x2="15" y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
-              <line x1="1" y1="1"  x2="1"  y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
-            <h2 class="panel__title">直近 7回の推移</h2>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="trend-chart"></canvas>
-        </div>
       </section>
 
       <!-- 先週③内訳 -->
@@ -271,6 +254,39 @@
             <p class="detail__empty" id="detail-empty-incomplete" hidden>対象データがありません</p>
           </div>
 
+        </div>
+      </section>
+
+      <!-- 今後4週の検収完了予定 -->
+      <section class="forecast-row" id="forecast-section" hidden>
+        <div class="forecast-row__head">
+          <svg class="panel__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1.5" y="3" width="13" height="11" rx="1.5" stroke="#f97316" stroke-width="1.4" fill="none"/>
+            <line x1="5" y1="1" x2="5" y2="5" stroke="#f97316" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="11" y1="1" x2="11" y2="5" stroke="#f97316" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="1.5" y1="7" x2="14.5" y2="7" stroke="#f97316" stroke-width="1.2"/>
+            <line x1="9" y1="10.5" x2="12.5" y2="10.5" stroke="#f97316" stroke-width="1.2" stroke-linecap="round"/>
+            <polyline points="11,8.8 13,10.5 11,12.2" stroke="#f97316" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          今後4週の検収完了予定
+        </div>
+        <div class="forecast-row__cards" id="forecast-cards"></div>
+      </section>
+
+      <!-- 推移グラフ（一覧非表示時） -->
+      <section class="panel chart-panel" id="chart-section" hidden>
+        <div class="panel__head">
+          <div class="panel__title-wrap">
+            <svg class="panel__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="1,12 5,7 8,9 11,4 15,2" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <line x1="1" y1="14" x2="15" y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="1" y1="1"  x2="1"  y2="14" stroke="#3b82f6" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <h2 class="panel__title">直近 7回の推移</h2>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
         </div>
       </section>
 

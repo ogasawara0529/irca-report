@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import requests as req
-from datetime import date
+from datetime import date, timedelta
 from flask import Flask, jsonify, request, send_from_directory, session, redirect
 from functools import wraps
 from pathlib import Path
@@ -165,6 +165,7 @@ def _detail(rec: dict) -> dict:
         'delivery_date':   convert_fm_date(fd.get('納品予定日_最終', '')),
         'completion_date': convert_fm_date(fd.get('納品日', '')),
         'progress':        fd.get('開発完了率_入力', ''),
+        'signal':          fd.get('状態信号', ''),
         'dept':            fd.get('PM担当者_所属課', ''),
     }
 
@@ -291,11 +292,34 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
     with FMClient() as client:
         recs_1 = client.records([{'プロジェクト区分': PROJECT_TYPE, '開発開始日': range1}])
         recs_2 = client.records([{'プロジェクト区分': PROJECT_TYPE, '納品日':      range2}])
-        recs_3 = client.records([{'プロジェクト区分': PROJECT_TYPE, '納品予定日_最終': range3}])
+        # 除外条件（納品日あり・status=完了）は Python 側でフィルタリング
+        # 除外された案件に今日付の 報告日_朝会 が残っている場合はクリア
+        recs_3_all = client.records_breakdown([{'プロジェクト区分': PROJECT_TYPE, '納品予定日_最終': range3}])
+        recs_3 = []
+        for rec in recs_3_all:
+            fd = rec['fieldData']
+            if _parse_fm_date(fd.get('納品日', '')) or fd.get('status', '') == '完了':
+                if _parse_fm_date(fd.get('報告日_朝会', '')) == report_date:
+                    client.update(rec['recordId'], {'報告日_朝会': ''})
+            else:
+                recs_3.append(rec)
 
         for rec in recs_3:
             client.update(rec['recordId'], {'報告日_朝会': today_fm})
         logger.info(f'① {len(recs_1)}件  ② {len(recs_2)}件  ③ {len(recs_3)}件  報告日_朝会更新完了')
+
+        # 先4週の検収完了予定件数
+        fw_list = []
+        for w in range(1, 5):
+            fw_start = p3s + timedelta(weeks=w)
+            fw_end   = p3e + timedelta(weeks=w)
+            fw_range = f'{fm_date(fw_start)}...{fm_date(fw_end)}'
+            fw_recs  = client.records([{'プロジェクト区分': PROJECT_TYPE, '納品予定日_最終': fw_range}])
+            fw_list.append({
+                'period': {'start': display_date(fw_start), 'end': display_date(fw_end)},
+                'count': len(fw_recs),
+            })
+        logger.info(f'先4週 {[f["count"] for f in fw_list]}件')
 
         # 先週③の内訳（内訳専用レイアウトで取得）
         base        = {'プロジェクト区分': PROJECT_TYPE, '報告日_朝会': last_rep_fm}
@@ -355,6 +379,7 @@ def run_collect(report_date, p1s, p1e, p2s, p2e, p3s, p3e, last_report, prev_sch
             'completed': [_detail(r) for r in recs_2],
             'scheduled': [_detail(r) for r in recs_3],
         },
+        'future_weeks': fw_list,
     }
 
 

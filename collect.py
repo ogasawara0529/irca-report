@@ -233,6 +233,7 @@ def _detail_started(rec: dict) -> dict:
         'delivery_date':   convert_fm_date(fd.get('納品予定日_最終', '')),
         'completion_date': convert_fm_date(fd.get('納品日', '')),
         'progress':        fd.get('開発完了率_入力', ''),
+        'signal':          fd.get('状態信号', ''),
         'dept':            fd.get('PM担当者_所属課', ''),
     }
 
@@ -266,7 +267,20 @@ def collect(client: FileMakerClient, d: dict) -> dict:
     logger.info(f'② 完了: {count_2} 件')
 
     # ③ 検収完了予定件数（今週納品予定）→ 報告日_朝会 を本日で更新
-    recs_3  = client.records([{'プロジェクト区分': PROJECT_TYPE, '納品予定日_最終': this_range}])
+    # 除外条件（納品日あり・status=完了）は Python 側でフィルタリング
+    # 除外された案件に今日付の 報告日_朝会 が残っている場合はクリア
+    recs_3_all = client.records_breakdown([{'プロジェクト区分': PROJECT_TYPE, '納品予定日_最終': this_range}])
+    report_day  = d['report_date']
+
+    recs_3 = []
+    for rec in recs_3_all:
+        fd = rec['fieldData']
+        if _parse_fm_date(fd.get('納品日', '')) or fd.get('status', '') == '完了':
+            if _parse_fm_date(fd.get('報告日_朝会', '')) == report_day:
+                client.update(rec['recordId'], {'報告日_朝会': ''})
+        else:
+            recs_3.append(rec)
+
     count_3 = len(recs_3)
     logger.info(f'③ 今週予定: {count_3} 件 → 報告日_朝会 を {today_fm} に更新')
     for rec in recs_3:

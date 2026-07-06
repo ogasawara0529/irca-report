@@ -61,6 +61,7 @@ const DETAIL_CONFIG = {
 
 /* ─── 状態 ────────────────────────────────────────── */
 let currentData       = null;
+let _forecastHasData  = false;
 let currentDateIso    = null;
 let currentDetailType = null;
 
@@ -197,6 +198,7 @@ function render(d) {
     '合計 ' + d.last_week_breakdown.total + ' 件　報告日: ' + d.last_report_date);
 
   renderBreakdownPie(d.last_week_breakdown);
+  renderFutureWeeks(d.future_weeks || []);
   setText('footer-updated',
     '最終更新: ' + new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
@@ -224,42 +226,37 @@ function renderBars(bd) {
 /* ─── 詳細パネル ──────────────────────────────────── */
 function showDetail(type) {
   if (!currentData) return;
-  const panel     = document.getElementById('detail-panel');
-  const breakdown = document.getElementById('breakdown-panel');
 
-  // 同じカードを再クリック → 内訳を先に閉じてから一覧を閉じる
-  if (!panel.hidden && currentDetailType === type) {
-    if (breakdown) breakdown.hidden = true;
-    // 絞り込みを解除してからクローズ
-    breakdownFilter = null;
-    updateBarHighlight();
+  const panel = document.getElementById('detail-panel');
+
+  // 同じカードを再クリックしたら閉じる
+  if (currentDetailType === type && panel && !panel.hidden) {
     closeDetail();
     return;
   }
+
   currentDetailType = type;
 
-  // ①③切り替え時はフィルターをリセット
   if (type !== 'completed' && breakdownFilter) {
     breakdownFilter = null;
     updateBarHighlight();
   }
 
-  // 一覧パネルの罫線色をKPIカードに合わせる
   const COLOR_MAP = { started: 'blue', completed: 'teal', scheduled: 'orange' };
-  panel.className = panel.className.replace(/\bdetail--\w+/g, '').trim();
-  panel.classList.add('detail--' + (COLOR_MAP[type] || 'blue'));
+  if (panel) {
+    panel.className = panel.className.replace(/\bdetail--\w+/g, '').trim();
+    panel.classList.add('detail--' + (COLOR_MAP[type] || 'blue'));
+  }
+
+  const breakdown = document.getElementById('breakdown-panel');
+  if (breakdown) breakdown.hidden = type !== 'completed';
 
   renderDetailContent(type);
 
-  // 内訳パネル：②のみ表示、①③は非表示
-  if (breakdown) breakdown.hidden = type !== 'completed';
-
-  panel.hidden = false;
-  updateKpiMode();
-
-  const scrollTarget = (type === 'completed' && breakdown && !breakdown.hidden)
-    ? breakdown : panel;
-  scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (panel) {
+    panel.hidden = false;
+    updateKpiMode();
+  }
 }
 
 /* ─── 詳細パネル 描画（フィルター対応） ────────────── */
@@ -337,13 +334,17 @@ function renderDetailContent(type) {
 }
 
 /* ─── 進捗バーセル描画 ────────────────────────────── */
-function progressCell(value) {
+function progressCell(value, signal) {
   const raw = parseFloat(String(value || '').replace('%', '').trim()) || 0;
   // FileMaker フィールドは 0〜1 の小数なので 100 倍してパーセントに変換
   const pct = Math.min(Math.max(Math.round(raw * 100), 0), 100);
-  const color = pct >= 100 ? 'var(--c-done)'
-              : pct >= 50  ? 'var(--c-wait)'
-              :               'var(--c-miss)';
+  // 状態信号（赤/黄/緑）に合わせた薄めの色
+  const color = signal === '赤' ? '#f87171'
+              : signal === '黄' ? '#fcd34d'
+              : signal === '緑' ? '#4ade80'
+              : pct >= 100     ? '#4ade80'
+              : pct >= 50      ? '#fcd34d'
+              :                  '#f87171';
   return `<td>
     <div class="prog-wrap">
       <div class="prog-fill" style="width:${pct}%;background:${color}"></div>
@@ -381,7 +382,7 @@ function renderGroupedRows(records, cols) {
 function renderTableRow(row, cols) {
   return '<tr>' + cols.map(c => {
     const val = row[c.key] || '–';
-    if (c.key === 'progress') return progressCell(row[c.key]);
+    if (c.key === 'progress') return progressCell(row[c.key], row.signal);
     if (c.key === 'cd' && row.category) {
       const color = CATEGORY_COLORS[row.category] || 'var(--muted)';
       return `<td><span class="cd-dot" style="background:${color}"></span>${val}</td>`;
@@ -418,73 +419,53 @@ function closeDetail() {
   const panel = document.getElementById('detail-panel');
   if (panel) panel.hidden = true;
   currentDetailType = null;
-  if (breakdownFilter) {
-    breakdownFilter = null;
-    updateBarHighlight();
-  }
+  if (breakdownFilter) { breakdownFilter = null; updateBarHighlight(); }
   updateKpiMode();
 }
 
 function closeBreakdown() {
   const breakdown = document.getElementById('breakdown-panel');
-  const panel     = document.getElementById('detail-panel');
   if (breakdown) breakdown.hidden = true;
 
-  // フィルター解除
   if (breakdownFilter) {
     breakdownFilter = null;
     updateBarHighlight();
-    // 案件一覧が表示中なら②の全件表示に戻す
-    if (panel && !panel.hidden && currentDetailType === 'completed') {
-      renderDetailContent('completed');
-    }
+    if (currentDetailType === 'completed') renderDetailContent('completed');
   }
 
   updateKpiMode();
 }
 
-let _cachedContractedH = 0;
-
 function updateKpiMode() {
   const kpiRow = document.querySelector('.kpi-row');
   if (!kpiRow) return;
-  // 一覧・内訳のどちらか一方でも表示中は縮小モード
-  const detailVisible = !document.getElementById('detail-panel').hidden ||
-                        !document.getElementById('breakdown-panel').hidden;
+  const panel         = document.getElementById('detail-panel');
+  const detailVisible = panel && !panel.hidden;
 
-  const chartSection = document.getElementById('chart-section');
+  const chartSection    = document.getElementById('chart-section');
+  const forecastSection = document.getElementById('forecast-section');
+
+  // カードは常に縮小サイズ固定
+  kpiRow.classList.remove('kpi-row--expanded');
+  kpiRow.querySelectorAll('.kpi').forEach(k => { k.style.minHeight = ''; });
 
   if (detailVisible) {
-    // 収縮モード（一覧表示中）
-    kpiRow.querySelectorAll('.kpi').forEach(k => k.style.minHeight = '');
-    kpiRow.classList.remove('kpi-row--expanded');
-    if (chartSection) chartSection.hidden = true;
-    _cachedContractedH = 0;
+    // 一覧表示中：グラフ・予定セクションは非表示
+    if (chartSection)    chartSection.hidden    = true;
+    if (forecastSection) forecastSection.hidden = true;
   } else {
-    // 拡大モード：収縮高さをキャッシュして2倍設定
-    if (!_cachedContractedH) {
-      kpiRow.classList.remove('kpi-row--expanded');
-      kpiRow.querySelectorAll('.kpi').forEach(k => k.style.minHeight = '');
-      kpiRow.classList.add('no-transition');
-      const card = kpiRow.querySelector('.kpi');
-      _cachedContractedH = card ? card.offsetHeight : 0;
-      kpiRow.classList.remove('no-transition');
-    }
-    kpiRow.classList.add('kpi-row--expanded');
-    kpiRow.querySelectorAll('.kpi').forEach(k => {
-      k.style.minHeight = '280px';
-    });
-    // グラフを表示
+    // 一覧非表示：グラフ・予定セクションを表示
     if (chartSection) {
       const wasHidden = chartSection.hidden;
       chartSection.hidden = false;
-      if (wasHidden) loadChartData(); // 表示に切り替わった時だけデータ読み込み
+      if (wasHidden) loadChartData();
     }
+    if (forecastSection) forecastSection.hidden = !_forecastHasData;
   }
 }
 
 // ウィンドウリサイズ時はキャッシュをリセット
-window.addEventListener('resize', () => { _cachedContractedH = 0; updateKpiMode(); });
+window.addEventListener('resize', () => { updateKpiMode(); });
 
 function reload() {
   closeDetail();
@@ -573,6 +554,7 @@ async function updateReport(dateIso, btn) {
 
     const newDates = await fetch('data/index.json?t=' + Date.now()).then(r => r.json());
     renderSidebar(newDates);
+    currentDateIso = null;  // 同一日付でも強制再取得
     selectDate(result.date_iso);
 
   } catch (e) {
@@ -614,7 +596,10 @@ async function deleteReport(dateIso) {
 
 /* ─── 新規登録モーダル ────────────────────────────── */
 function toISO(d) {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 /* FM日付 "2026/5/25" → ISO "2026-05-25" */
@@ -811,6 +796,37 @@ function renderBreakdownPie(bd) {
   });
 }
 
+/* ─── 今後4週の検収完了予定 ──────────────────────── */
+function jpDateFromSlash(s) {
+  if (!s) return '';
+  const parts = s.split('/');
+  return parts.length === 3 ? `${parseInt(parts[1])}月${parseInt(parts[2])}日` : s;
+}
+
+function renderFutureWeeks(weeks) {
+  const section   = document.getElementById('forecast-section');
+  const container = document.getElementById('forecast-cards');
+  if (!section || !container) return;
+
+  if (!weeks || weeks.length === 0) {
+    _forecastHasData = false;
+    section.hidden   = true;
+    return;
+  }
+
+  _forecastHasData    = true;
+  container.innerHTML = weeks.map((w, i) => `
+    <div class="forecast-card">
+      <span class="forecast-card__badge">+${i + 1}週</span>
+      <div class="forecast-card__period">${jpDateFromSlash(w.period.start)} 〜 ${jpDateFromSlash(w.period.end)}</div>
+      <div class="forecast-card__num-row">
+        <span class="forecast-card__num">${w.count}</span>
+        <span class="forecast-card__unit">件</span>
+      </div>
+    </div>
+  `).join('');
+}
+
 /* ─── 折れ線グラフ ────────────────────────────────── */
 let _chartInstance     = null;
 let _breakdownPieChart = null;
@@ -894,6 +910,11 @@ function renderChart(labels, started, completed, scheduled) {
       },
     },
   });
+}
+
+/* ─── サイドバー開閉 ──────────────────────────────── */
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('sidebar--collapsed');
 }
 
 /* ─── ログイン状態の確認・topbar 設定 ───────────────── */
