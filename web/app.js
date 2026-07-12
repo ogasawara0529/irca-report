@@ -418,6 +418,8 @@ function renderIncompleteTable(records, cols) {
 function closeDetail() {
   const panel = document.getElementById('detail-panel');
   if (panel) panel.hidden = true;
+  const breakdown = document.getElementById('breakdown-panel');
+  if (breakdown) breakdown.hidden = true;
   currentDetailType = null;
   if (breakdownFilter) { breakdownFilter = null; updateBarHighlight(); }
   updateKpiMode();
