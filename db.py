@@ -45,6 +45,36 @@ def init_db():
                 role VARCHAR(20) NOT NULL DEFAULT 'user'
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS report_items (
+                id SERIAL PRIMARY KEY,
+                date_iso DATE NOT NULL,
+                subject VARCHAR(255),
+                content TEXT NOT NULL,
+                url TEXT,
+                created_by VARCHAR(100),
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS report_item_files (
+                id SERIAL PRIMARY KEY,
+                report_item_id INTEGER NOT NULL REFERENCES report_items(id) ON DELETE CASCADE,
+                filename VARCHAR(255) NOT NULL,
+                content_type VARCHAR(100),
+                data BYTEA NOT NULL,
+                size INTEGER NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        # 旧カラム名（item_count）からの移行
+        cur.execute("""
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'report_items' AND column_name = 'item_count'
+        """)
+        if cur.fetchone():
+            cur.execute("ALTER TABLE report_items RENAME COLUMN item_count TO subject")
+            cur.execute("ALTER TABLE report_items ALTER COLUMN subject TYPE VARCHAR(255) USING subject::VARCHAR(255)")
 
 
 # ── レポート操作 ──────────────────────────────────────────────
@@ -158,3 +188,78 @@ def account_count():
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM accounts")
         return cur.fetchone()[0]
+
+
+# ── 報告事項操作 ──────────────────────────────────────────────
+
+def list_report_items(date_iso: str):
+    """指定報告日の報告事項一覧（添付ファイルは一覧情報のみ、本体データは含まない）"""
+    with get_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("""
+            SELECT id, subject, content, url, created_by, created_at
+            FROM report_items WHERE date_iso = %s ORDER BY id
+        """, (date_iso,))
+        items = [dict(row) for row in cur.fetchall()]
+        for item in items:
+            cur.execute("""
+                SELECT id, filename, content_type, size FROM report_item_files
+                WHERE report_item_id = %s ORDER BY id
+            """, (item['id'],))
+            item['files'] = [dict(row) for row in cur.fetchall()]
+        return items
+
+
+def get_report_item(item_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("""
+            SELECT id, date_iso, subject, content, url, created_by, created_at
+            FROM report_items WHERE id = %s
+        """, (item_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        item = dict(row)
+        cur.execute("""
+            SELECT id, filename, content_type, size FROM report_item_files
+            WHERE report_item_id = %s ORDER BY id
+        """, (item_id,))
+        item['files'] = [dict(r) for r in cur.fetchall()]
+        return item
+
+
+def create_report_item(date_iso: str, subject: str, content: str, url: str, created_by: str) -> int:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO report_items (date_iso, subject, content, url, created_by)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+        """, (date_iso, subject, content, url, created_by))
+        return cur.fetchone()[0]
+
+
+def add_report_item_file(report_item_id: int, filename: str, content_type: str, data: bytes) -> int:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO report_item_files (report_item_id, filename, content_type, data, size)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+        """, (report_item_id, filename, content_type, psycopg2.Binary(data), len(data)))
+        return cur.fetchone()[0]
+
+
+def get_report_item_file(file_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("""
+            SELECT filename, content_type, data FROM report_item_files WHERE id = %s
+        """, (file_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_report_item(item_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM report_items WHERE id = %s", (item_id,))

@@ -106,6 +106,44 @@
       </div>
     </div>
 
+    <!-- 報告事項 登録モーダル -->
+    <div class="modal-overlay" id="report-item-modal" hidden>
+      <div class="modal">
+        <div class="modal__head">
+          <h2 class="modal__title">報告事項の登録</h2>
+          <button class="modal__close" onclick="closeReportItemModal()">✕</button>
+        </div>
+        <div class="modal__body">
+
+          <div class="form-group">
+            <label class="form-label">件名</label>
+            <input type="text" class="form-input" id="ri-f-subject" placeholder="任意">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">内容</label>
+            <textarea class="form-input" id="ri-f-content" rows="4" placeholder="報告事項の内容を入力"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">URL</label>
+            <input type="url" class="form-input" id="ri-f-url" placeholder="https://（任意）">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">添付ファイル（複数選択可）</label>
+            <input type="file" class="form-input" id="ri-f-files" multiple>
+          </div>
+
+          <p class="form-note" id="ri-register-error" hidden></p>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-cancel" onclick="closeReportItemModal()">キャンセル</button>
+          <button class="btn-register" id="ri-btn-register" onclick="submitReportItem()">登録</button>
+        </div>
+      </div>
+    </div>
+
     <!-- メインコンテンツ -->
     <main class="main">
 
@@ -163,6 +201,58 @@
           <div class="kpi__foot"><span class="kpi__hint">一覧を見る ›</span></div>
         </div>
 
+      </section>
+
+      <!-- 報告事項 -->
+      <section class="panel" id="report-items-section">
+        <div class="panel__head">
+          <div class="panel__title-wrap">
+            <svg class="panel__icon" width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 2.5A1.5 1.5 0 014.5 1h5l3.5 3.5V13.5A1.5 1.5 0 0111.5 15h-7A1.5 1.5 0 013 13.5V2.5z" stroke="#6366f1" stroke-width="1.3" fill="none"/>
+              <line x1="5.5" y1="7"   x2="10.5" y2="7"   stroke="#6366f1" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="5.5" y1="9.5" x2="10.5" y2="9.5" stroke="#6366f1" stroke-width="1.1" stroke-linecap="round"/>
+              <line x1="5.5" y1="12"  x2="8.5"  y2="12"  stroke="#6366f1" stroke-width="1.1" stroke-linecap="round"/>
+            </svg>
+            <h2 class="panel__title">報告事項</h2>
+          </div>
+          <div class="panel__head-right">
+            <button class="sidebar__new-btn" onclick="openReportItemModal()" title="報告事項を登録">＋ 登録</button>
+          </div>
+        </div>
+        <ul class="report-item-list" id="report-item-list"></ul>
+        <p class="detail__empty" id="report-item-empty" hidden>報告事項はまだ登録されていません</p>
+      </section>
+
+      <!-- 報告事項 詳細パネル -->
+      <section class="detail detail--indigo" id="report-item-detail" hidden>
+        <div class="detail__head">
+          <div>
+            <h3 class="detail__title" id="ri-detail-title">報告事項</h3>
+            <span class="detail__period" id="ri-detail-meta"></span>
+          </div>
+          <div class="panel__head-right">
+            <button class="sb-btn sb-btn--delete" onclick="deleteReportItemFromDetail()">削除</button>
+            <button class="detail__close" onclick="closeReportItemDetail()">✕ 閉じる</button>
+          </div>
+        </div>
+        <div class="detail__body">
+          <div class="ri-detail-field">
+            <span class="ri-detail-label">件名</span>
+            <span id="ri-detail-subject"></span>
+          </div>
+          <div class="ri-detail-field">
+            <span class="ri-detail-label">内容</span>
+            <p class="ri-detail-content" id="ri-detail-content"></p>
+          </div>
+          <div class="ri-detail-field" id="ri-detail-url-wrap" hidden>
+            <span class="ri-detail-label">URL</span>
+            <a id="ri-detail-url" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div class="ri-detail-field" id="ri-detail-files-wrap" hidden>
+            <span class="ri-detail-label">添付ファイル</span>
+            <ul class="ri-file-list" id="ri-detail-files"></ul>
+          </div>
+        </div>
       </section>
 
       <!-- 先週③内訳 -->

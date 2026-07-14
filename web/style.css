@@ -18,6 +18,9 @@
   --orange:     #f97316;
   --orange-lt:  #fff7ed;
   --orange-mid: #fed7aa;
+  --indigo:     #6366f1;
+  --indigo-lt:  #eef2ff;
+  --indigo-mid: #c7d2fe;
 
   --c-done: #22c55e;
   --c-wait: #eab308;
@@ -578,9 +581,11 @@ body {
 
 .detail--teal   { border-top-color: #0d9488; }
 .detail--orange { border-top-color: var(--orange); }
+.detail--indigo { border-top-color: var(--indigo); }
 .detail--blue   .detail__head { background: #eff6ff; border-bottom: 1px solid var(--blue-mid); }
 .detail--teal   .detail__head { background: var(--teal-lt); border-bottom: 1px solid var(--teal-mid); }
 .detail--orange .detail__head { background: var(--orange-lt); border-bottom: 1px solid var(--orange-mid); }
+.detail--indigo .detail__head { background: var(--indigo-lt); border-bottom: 1px solid var(--indigo-mid); }
 .detail__title { font-size: .9rem; font-weight: 700; color: var(--text-hi); margin-bottom: 3px; }
 .detail__period { font-size: .72rem; color: var(--muted); }
 .detail__close {
@@ -944,6 +949,93 @@ tr.group-header:first-child td { border-top: none; }
 .forecast-card__unit {
   font-size: .75rem;
   color: var(--muted);
+}
+
+/* ─── 報告事項 ─────────────────────────────────────── */
+.report-item-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-item-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 180px) 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.report-item-row:hover {
+  background: var(--indigo-lt);
+  border-color: var(--indigo-mid);
+}
+
+.report-item-row__subject {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--indigo);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-item-row__content {
+  font-size: .82rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-item-row__url,
+.report-item-row__files {
+  font-size: .78rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.report-item-row__url:hover { color: var(--indigo); }
+
+.ri-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ri-detail-field + .ri-detail-field { margin-top: 18px; }
+
+.ri-detail-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ri-detail-content {
+  font-size: .85rem;
+  color: var(--text-hi);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+#ri-detail-url {
+  font-size: .85rem;
+  color: var(--indigo);
+  word-break: break-all;
+}
+
+.ri-file-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ri-file-list a {
+  font-size: .82rem;
+  color: var(--indigo);
+  text-decoration: underline;
 }
 
 /* ─── Animation ────────────────────────────────────── */

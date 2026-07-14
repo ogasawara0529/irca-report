@@ -60,6 +60,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'irca-change-this-secret-key')
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # リクエスト全体の上限 64MB（報告事項の複数ファイル添付対策）
 
 # DB モジュールをインポート（DATABASE_URL が設定されていれば使用）
 import db as _db
@@ -112,6 +113,12 @@ def add_cors(resp):
 @app.route('/api/collect', methods=['OPTIONS'])
 def collect_options():
     return '', 204
+
+@app.errorhandler(413)
+def handle_too_large(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'error': 'アップロードサイズが上限(64MB)を超えています'}), 413
+    return e
 
 
 # ── ユーティリティ ────────────────────────────────────────────
@@ -609,6 +616,88 @@ def api_accounts_delete(no):
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ── 報告事項 API ──────────────────────────────────────────────
+MAX_REPORT_ITEM_FILE_SIZE = 15 * 1024 * 1024  # 15MB/ファイル
+
+def _serialize_report_item(item: dict) -> dict:
+    if hasattr(item.get('date_iso'), 'isoformat'):
+        item['date_iso'] = item['date_iso'].isoformat()
+    if hasattr(item.get('created_at'), 'isoformat'):
+        item['created_at'] = item['created_at'].isoformat()
+    return item
+
+@app.route('/api/report_items')
+@login_required
+def api_report_items_list():
+    date_iso = request.args.get('date', '')
+    if not date_iso:
+        return jsonify({'error': 'date is required'}), 400
+    items = _db.list_report_items(date_iso)
+    return jsonify([_serialize_report_item(i) for i in items])
+
+@app.route('/api/report_items/<int:item_id>')
+@login_required
+def api_report_item_detail(item_id):
+    item = _db.get_report_item(item_id)
+    if not item:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify(_serialize_report_item(item))
+
+@app.route('/api/report_items', methods=['POST'])
+@login_required
+def api_report_items_create():
+    try:
+        date_iso = request.form.get('date_iso', '')
+        content  = (request.form.get('content') or '').strip()
+        url      = (request.form.get('url') or '').strip()
+        subject  = (request.form.get('subject') or '').strip()
+
+        if not date_iso or not content:
+            return jsonify({'success': False, 'error': '報告日と内容は必須です'}), 400
+
+        created_by = session['user']['username']
+
+        item_id = _db.create_report_item(date_iso, subject or None, content, url or None, created_by)
+
+        for f in request.files.getlist('files'):
+            if not f.filename:
+                continue
+            data = f.read()
+            if len(data) > MAX_REPORT_ITEM_FILE_SIZE:
+                return jsonify({'success': False, 'error': f'{f.filename} は15MBを超えています'}), 400
+            _db.add_report_item_file(item_id, f.filename, f.mimetype, data)
+
+        logger.info(f'報告事項登録: id={item_id} date={date_iso} by={created_by}')
+        return jsonify({'success': True, 'id': item_id})
+    except Exception as e:
+        logger.exception('報告事項登録エラー')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/report_items/<int:item_id>', methods=['DELETE'])
+@login_required
+def api_report_items_delete(item_id):
+    try:
+        _db.delete_report_item(item_id)
+        logger.info(f'報告事項削除: id={item_id} by={session["user"]["username"]}')
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.exception('報告事項削除エラー')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/report_items/files/<int:file_id>')
+@login_required
+def api_report_item_file(file_id):
+    f = _db.get_report_item_file(file_id)
+    if not f:
+        return jsonify({'error': 'not found'}), 404
+    from flask import Response
+    return Response(
+        bytes(f['data']),
+        mimetype=f['content_type'] or 'application/octet-stream',
+        headers={'Content-Disposition': f"inline; filename*=UTF-8''{quote(f['filename'])}"},
+    )
 
 
 # ── ファイルフォールバック ────────────────────────────────────

@@ -150,6 +150,7 @@ async function selectDate(iso) {
 
   closeDetail();
   closeBreakdown();
+  closeReportItemDetail();
   try {
     const resp = await fetch('data/reports/' + iso + '.json?t=' + Date.now());
     if (!resp.ok) throw new Error();
@@ -201,6 +202,8 @@ function render(d) {
   renderFutureWeeks(d.future_weeks || []);
   setText('footer-updated',
     '最終更新: ' + new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+
+  if (currentDateIso) loadReportItems(currentDateIso); else clearReportItemList();
 
   updateKpiMode();
 }
@@ -436,6 +439,170 @@ function closeBreakdown() {
   }
 
   updateKpiMode();
+}
+
+/* ─── 報告事項 ────────────────────────────────────── */
+let reportItemsCache   = [];
+let currentReportItemId = null;
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+async function loadReportItems(dateIso) {
+  try {
+    const resp = await fetch('/api/report_items?date=' + encodeURIComponent(dateIso));
+    if (!resp.ok) throw new Error();
+    reportItemsCache = await resp.json();
+  } catch {
+    reportItemsCache = [];
+  }
+  renderReportItemList();
+}
+
+function clearReportItemList() {
+  reportItemsCache = [];
+  renderReportItemList();
+}
+
+function renderReportItemList() {
+  const list  = document.getElementById('report-item-list');
+  const empty = document.getElementById('report-item-empty');
+  if (!list) return;
+
+  if (!reportItemsCache.length) {
+    list.innerHTML = '';
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+
+  list.innerHTML = reportItemsCache.map(item => `
+    <li class="report-item-row" onclick="showReportItemDetail(${item.id})">
+      <span class="report-item-row__subject">${item.subject ? escapeHtml(item.subject) : '–'}</span>
+      <span class="report-item-row__content">${escapeHtml(item.content)}</span>
+      ${item.url ? `<a class="report-item-row__url" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="サイトを開く">🔗</a>` : ''}
+      ${item.files.length ? `<span class="report-item-row__files" title="添付ファイル">📎 ${item.files.length}</span>` : ''}
+    </li>
+  `).join('');
+}
+
+/* 登録モーダル */
+function openReportItemModal() {
+  if (!currentDateIso) { alert('報告日が選択されていません'); return; }
+  document.getElementById('ri-f-subject').value = '';
+  document.getElementById('ri-f-content').value = '';
+  document.getElementById('ri-f-url').value     = '';
+  document.getElementById('ri-f-files').value   = '';
+  document.getElementById('ri-register-error').hidden = true;
+  document.getElementById('report-item-modal').hidden  = false;
+}
+
+function closeReportItemModal() {
+  document.getElementById('report-item-modal').hidden = true;
+}
+
+async function submitReportItem() {
+  const btn     = document.getElementById('ri-btn-register');
+  const err     = document.getElementById('ri-register-error');
+  const content = document.getElementById('ri-f-content').value.trim();
+  err.hidden = true;
+
+  if (!content) {
+    err.textContent = '内容は必須です';
+    err.hidden = false;
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('date_iso', currentDateIso);
+  fd.append('content',  content);
+  fd.append('subject',  document.getElementById('ri-f-subject').value.trim());
+  fd.append('url',      document.getElementById('ri-f-url').value.trim());
+  for (const f of document.getElementById('ri-f-files').files) fd.append('files', f);
+
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '登録中...';
+
+  try {
+    const resp   = await fetch('/api/report_items', { method: 'POST', body: fd });
+    const result = await resp.json();
+    if (!result.success) throw new Error(result.error || '登録に失敗しました');
+    closeReportItemModal();
+    await loadReportItems(currentDateIso);
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+/* 詳細パネル */
+async function showReportItemDetail(id) {
+  try {
+    const resp = await fetch('/api/report_items/' + id);
+    if (!resp.ok) throw new Error();
+    renderReportItemDetail(await resp.json());
+    currentReportItemId = id;
+    const panel = document.getElementById('report-item-detail');
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch {
+    alert('報告事項の取得に失敗しました');
+  }
+}
+
+function renderReportItemDetail(item) {
+  setText('ri-detail-subject', item.subject || '–');
+  setText('ri-detail-content', item.content);
+  setText('ri-detail-meta',
+    '登録: ' + (item.created_by || '') + '　' + (item.created_at ? item.created_at.slice(0, 19).replace('T', ' ') : ''));
+
+  const urlWrap = document.getElementById('ri-detail-url-wrap');
+  const urlEl   = document.getElementById('ri-detail-url');
+  if (item.url) {
+    urlEl.href = item.url;
+    urlEl.textContent = item.url;
+    urlWrap.hidden = false;
+  } else {
+    urlWrap.hidden = true;
+  }
+
+  const filesWrap = document.getElementById('ri-detail-files-wrap');
+  const filesList = document.getElementById('ri-detail-files');
+  if (item.files && item.files.length) {
+    filesList.innerHTML = item.files.map(f => `
+      <li><a href="/api/report_items/files/${f.id}" target="_blank" rel="noopener noreferrer">${escapeHtml(f.filename)}</a></li>
+    `).join('');
+    filesWrap.hidden = false;
+  } else {
+    filesWrap.hidden = true;
+  }
+}
+
+function closeReportItemDetail() {
+  const panel = document.getElementById('report-item-detail');
+  if (panel) panel.hidden = true;
+  currentReportItemId = null;
+}
+
+async function deleteReportItemFromDetail() {
+  if (!currentReportItemId) return;
+  if (!confirm('この報告事項を削除しますか？\nこの操作は取り消せません。')) return;
+  try {
+    const resp   = await fetch('/api/report_items/' + currentReportItemId, { method: 'DELETE' });
+    const result = await resp.json();
+    if (!result.success) throw new Error(result.error);
+    closeReportItemDetail();
+    await loadReportItems(currentDateIso);
+  } catch (e) {
+    alert('削除に失敗しました: ' + e.message);
+  }
 }
 
 function updateKpiMode() {
